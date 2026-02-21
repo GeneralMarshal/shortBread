@@ -1,5 +1,5 @@
 // this function should take in no arguments but should generate a randomshort code when called, this code is what will be the shortbread for the long address.
-export function generateShortBread() {
+export default function generateShortBread() {
   const BASE62_ALPHABET =
     '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const shortCodeLength = 6;

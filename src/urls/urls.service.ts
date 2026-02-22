@@ -14,9 +14,13 @@ export class UrlsService {
     };
   }
 
-  async redirect(code: string) {
+  redirect(code: string) {
     if (!code) {
       throw new BadRequestException('Code is required');
     }
+    return {
+      code,
+    };
   }
+  
 }

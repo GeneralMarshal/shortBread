@@ -16,8 +16,6 @@ export class UrlsController {
   @Get(':code')
   @HttpCode(HttpStatus.FOUND)
   async redirect(@Param('code') code: string) {
-    // const longUrl = await this.urlsService.redirect(code);
-
-    // return { url: longUrl };
+    return this.urlsService.redirect(code);
   }
 }

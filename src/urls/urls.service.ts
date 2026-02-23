@@ -3,6 +3,7 @@ import generateShortBread from '../utils/short-code';
 import { BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUrlDto } from './dtos/create-url.dto';
+import { Prisma } from 'generated/prisma/client';
 @Injectable()
 export class UrlsService {
   constructor(private prisma: PrismaService) {}
@@ -64,5 +65,38 @@ export class UrlsService {
     return {
       longUrl: longUrl.longUrl,
     };
+  }
+
+  async delete(code: string) {
+    if (!code) {
+      throw new BadRequestException('Code is required');
+    }
+    // const existCode = await this.prisma.shortUrl.findUnique({
+    //   where: { shortCode: code },
+    // });
+    // if (!existCode) {
+    //   throw new NotFoundException('Short URL not found');
+    // }
+    // const deleteCode = await this.prisma.shortUrl.delete({
+    //   where: { shortCode: code },
+    // });
+    // if (!deleteCode) {
+    //   throw new BadRequestException('Failed to delete short Url');
+    // }
+    // return deleteCode;
+    try {
+      const deleted = await this.prisma.shortUrl.delete({
+        where: { shortCode: code },
+      });
+      return { message: 'Short Url deleted successfully', data: deleted };
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2025'
+      ) {
+        throw new NotFoundException('Short Url not found');
+      }
+      throw e;
+    }
   }
 }

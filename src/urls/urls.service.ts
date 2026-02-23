@@ -1,12 +1,28 @@
-import { GoneException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  GoneException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import generateShortBread from '../utils/short-code';
 import { BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { Prisma } from 'generated/prisma/client';
+import Redis from 'ioredis';
+import { Logger } from '@nestjs/common';
+
+interface CachedUrl {
+  longUrl: string;
+  expiresAt: string | null;
+}
 @Injectable()
 export class UrlsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(UrlsService.name);
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
+  ) {}
 
   async getAll() {
     const allShortBreads = await this.prisma.shortUrl.findMany({
@@ -43,27 +59,77 @@ export class UrlsService {
     if (!code) {
       throw new BadRequestException('Code is required');
     }
-    const longUrl = await this.prisma.shortUrl.findUnique({
+
+    const cached = await this.redis.get(`short:${code}`);
+
+    if (cached) {
+      const { longUrl, expiresAt } = JSON.parse(cached) as CachedUrl;
+
+      const isExpired = expiresAt && new Date(expiresAt) < new Date();
+
+      if (isExpired) {
+        try {
+          await this.redis.del(`short:${code}`);
+        } catch (error) {
+          this.logger.warn('Redis delete failed', error);
+        }
+        throw new GoneException('Short URL has expired');
+      }
+
+      this.prisma.shortUrl
+        .update({
+          where: { shortCode: code },
+          data: {
+            clickCount: { increment: 1 },
+          },
+        })
+        .catch((error) => {
+          this.logger.warn('Failed to increment click count', error);
+        });
+
+      return {
+        longUrl,
+      };
+    }
+
+    const shortUrl = await this.prisma.shortUrl.findUnique({
       where: { shortCode: code },
     });
-    if (!longUrl) {
+    if (!shortUrl) {
       throw new NotFoundException('Short URL not found');
     }
-    const isExpired = longUrl.expiresAt && longUrl.expiresAt < new Date();
+    const isExpired = shortUrl.expiresAt && shortUrl.expiresAt < new Date();
     if (isExpired) {
       throw new GoneException('Short URL has expired');
     }
 
-    const updateCount = await this.prisma.shortUrl.update({
-      where: { id: longUrl.id },
-      data: { clickCount: { increment: 1 } },
-    });
+    this.prisma.shortUrl
+      .update({
+        where: { id: shortUrl.id },
+        data: { clickCount: { increment: 1 } },
+      })
+      .catch((error) => {
+        this.logger.warn('Failed to increment click count', error);
+      });
 
-    if (!updateCount) {
-      throw new BadRequestException('Failed to update click count');
+    try {
+      console.log(`setting cache for ${code}`);
+      await this.redis.set(
+        `short:${code}`,
+        JSON.stringify({
+          longUrl: shortUrl.longUrl,
+          expiresAt: shortUrl.expiresAt,
+        }),
+        'EX',
+        3600,
+      );
+      console.log('caching successful');
+    } catch (error) {
+      console.log('caching failed');
+      this.logger.warn('Redis set failed', error);
     }
     return {
-      longUrl: longUrl.longUrl,
+      longUrl: shortUrl.longUrl,
     };
   }
 

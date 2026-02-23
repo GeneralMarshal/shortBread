@@ -21,4 +21,4 @@ import Redis from 'ioredis';
 })
 export class RedisModule {}
 
-console.log('Redis module initialized');
+console.log('redis initialized successfully');

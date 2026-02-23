@@ -7,10 +7,16 @@ import { UrlsService } from './urls.service';
 export class UrlsController {
   constructor(private urlsService: UrlsService) {}
 
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  getAll() {
+    return this.urlsService.getAll();
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() dto: CreateUrlDto) {
-    return this.urlsService.create(dto.longUrl);
+    return this.urlsService.create(dto);
   }
 
   @Get(':code')

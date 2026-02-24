@@ -1,7 +1,8 @@
-import { Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, HttpCode, HttpStatus, Patch } from '@nestjs/common';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { Body, Get, Param, Delete } from '@nestjs/common';
 import { UrlsService } from './urls.service';
+import { UpdateUrlDto } from './dtos/update-url.dto';
 
 @Controller('urls')
 export class UrlsController {
@@ -29,5 +30,11 @@ export class UrlsController {
   @HttpCode(HttpStatus.OK)
   async delete(@Param('code') code: string) {
     return this.urlsService.delete(code);
+  }
+
+  @Patch(':code')
+  @HttpCode(HttpStatus.OK)
+  async update(@Param('code') code: string, @Body() dto: UpdateUrlDto) {
+    return await this.urlsService.update(code, dto);
   }
 }

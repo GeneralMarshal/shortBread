@@ -11,6 +11,7 @@ import { CreateUrlDto } from './dtos/create-url.dto';
 import { Prisma } from 'generated/prisma/client';
 import Redis from 'ioredis';
 import { Logger } from '@nestjs/common';
+import { UpdateUrlDto } from './dtos/update-url.dto';
 
 interface CachedUrl {
   longUrl: string;
@@ -163,6 +164,31 @@ export class UrlsService {
         throw new NotFoundException('Short Url not found');
       }
       throw e;
+    }
+  }
+
+  async update(code: string, dto: UpdateUrlDto) {
+    try {
+      const udpated = await this.prisma.shortUrl.update({
+        where: {
+          shortCode: code,
+        },
+        data: {
+          ...(dto.longUrl && { longUrl: dto.longUrl }),
+          ...(dto.expirationTime && { expiresAt: dto.expirationTime }),
+        },
+      });
+      return {
+        message: `Short Url ${code} updated successfully`,
+        data: udpated,
+      };
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2025'
+      ) {
+        throw new NotFoundException('Short Url not found');
+      }
     }
   }
 }

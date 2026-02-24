@@ -155,6 +155,9 @@ export class UrlsService {
       const deleted = await this.prisma.shortUrl.delete({
         where: { shortCode: code },
       });
+      await this.redis.del(`short:${code}`).catch((error) => {
+        this.logger.warn('Failed to invalidate code in cache', error);
+      });
       return { message: 'Short Url deleted successfully', data: deleted };
     } catch (e) {
       if (
@@ -177,6 +180,9 @@ export class UrlsService {
           ...(dto.longUrl && { longUrl: dto.longUrl }),
           ...(dto.expirationTime && { expiresAt: dto.expirationTime }),
         },
+      });
+      await this.redis.del(`short:${code}`).catch((error) => {
+        this.logger.warn('Failed to invalidate code in cache', error);
       });
       return {
         message: `Short Url ${code} updated successfully`,

@@ -13,14 +13,14 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+
   SwaggerModule.setup('app/api', app, document);
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(
     'Swagger documentation is available at http://localhost:3000/app/api',
   );
   console.log(`Server is running on port ${process.env.PORT ?? 3000}`);
-
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 }
 bootstrap();

@@ -7,6 +7,8 @@ import { UrlsModule } from './urls/urls.module';
 import { RedisModule } from './redis/redis.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { APP_GUARD } from '@nestjs/core';
     ConfigModule.forRoot(),
     UrlsModule,
     RedisModule,
+    UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

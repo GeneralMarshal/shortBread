@@ -1,10 +1,21 @@
-import { Controller, Post, HttpCode, HttpStatus, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { Body, Get, Param, Delete } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { UpdateUrlDto } from './dtos/update-url.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('urls')
+@UseGuards(AuthGuard('jwt'))
 export class UrlsController {
   constructor(private urlsService: UrlsService) {}
 

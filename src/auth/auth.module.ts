@@ -5,7 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService, ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -13,7 +13,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'fallback-secret',
+        secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
           expiresIn: '1d',
         },
@@ -21,7 +21,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, PrismaService, JwtStrategy, ConfigService],
+  providers: [AuthService, PrismaService, JwtStrategy],
   controllers: [AuthController],
+  exports: [JwtStrategy, PassportModule],
 })
 export class AuthModule {}

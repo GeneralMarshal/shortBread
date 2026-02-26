@@ -10,6 +10,7 @@ async function bootstrap() {
     .setTitle('Short Bread Api')
     .setDescription('Short Bread Api Documentation')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

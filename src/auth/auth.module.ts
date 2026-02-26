@@ -18,9 +18,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           expiresIn: '1d',
         },
       }),
+      inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, PrismaService, JwtStrategy],
+  providers: [AuthService, PrismaService, JwtStrategy, ConfigService],
   controllers: [AuthController],
 })
 export class AuthModule {}

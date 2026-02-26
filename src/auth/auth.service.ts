@@ -4,9 +4,14 @@ import { SignUpDto } from './dtos/signup.dto';
 import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dtos/login.dto';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from './jwt.strategy';
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
   private readonly saltRounds = 10;
 
   async hashPassword(password: string): Promise<string> {
@@ -68,6 +73,16 @@ export class AuthService {
       throw new BadRequestException('Invalid email or password');
     }
 
-    return user;
+    const payload: JwtPayload = { sub: user.id, email, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    };
   }
 }

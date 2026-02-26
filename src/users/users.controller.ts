@@ -3,6 +3,8 @@ import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { User } from 'src/common/decorators/user.decorator';
+import { JwtUser } from 'src/auth/jwt.strategy';
 
 @ApiBearerAuth()
 @Controller('users')
@@ -11,9 +13,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('self')
-  async getSelf(@Req() req: Request) {
-    const user = req.user as { userId: string; email: string; role: string };
-    const userId = user.userId;
-    return await this.usersService.getSelf(userId);
+  async getSelf(@User() user: JwtUser) {
+    return await this.usersService.getSelf(user.userId);
   }
 }

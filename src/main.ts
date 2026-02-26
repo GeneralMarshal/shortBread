@@ -11,6 +11,7 @@ async function bootstrap() {
     .setDescription('Short Bread Api Documentation')
     .setVersion('1.0')
     .addBearerAuth()
+    .addTag('auth')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

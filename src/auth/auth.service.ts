@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SignUpDto } from './dtos/signup.dto';
 import { BadRequestException } from '@nestjs/common';
@@ -7,11 +7,17 @@ import { LoginDto } from './dtos/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { JwtPayload } from './jwt.strategy';
+import Redis from 'ioredis';
+import { sessionKey, sessionsKey } from 'src/redis/redis-keys';
+import { Logger } from '@nestjs/common';
+import { Role } from '@prisma/client';
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
   private readonly saltRounds = 10;
 
@@ -82,6 +88,20 @@ export class AuthService {
       sessionId,
     };
     const accessToken = this.jwtService.sign(payload);
+
+    const key = sessionKey(user.role, user.id, sessionId);
+    const SESSION_TTL = 86400;
+    const setKey = sessionsKey(user.role, user.id);
+
+    await this.redis.setex(key, SESSION_TTL, user.id).catch((error) => {
+      this.logger.error('session store failed', error);
+    });
+    await this.redis.sadd(setKey, sessionId).catch((error) => {
+      this.logger.error('session set store failed', error);
+    });
+    await this.redis.expire(setKey, SESSION_TTL).catch((error) => {
+      this.logger.error('session expire failed', error);
+    });
 
     return {
       accessToken,

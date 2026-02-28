@@ -5,6 +5,7 @@ import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dtos/login.dto';
 import { JwtService } from '@nestjs/jwt';
+import * as crypto from 'crypto';
 import { JwtPayload } from './jwt.strategy';
 @Injectable()
 export class AuthService {
@@ -73,7 +74,13 @@ export class AuthService {
       throw new BadRequestException('Invalid email or password');
     }
 
-    const payload: JwtPayload = { sub: user.id, email, role: user.role };
+    const sessionId = crypto.randomUUID();
+    const payload: JwtPayload = {
+      sub: user.id,
+      email,
+      role: user.role,
+      sessionId,
+    };
     const accessToken = this.jwtService.sign(payload);
 
     return {

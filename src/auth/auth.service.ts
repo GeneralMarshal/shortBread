@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dtos/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
-import { JwtPayload } from './jwt.strategy';
+import { JwtPayload, JwtUser } from './jwt.strategy';
 import Redis from 'ioredis';
 import { sessionKey, sessionsKey } from 'src/redis/redis-keys';
 import { Logger } from '@nestjs/common';
@@ -110,5 +110,13 @@ export class AuthService {
         role: user.role,
       },
     };
+  }
+
+  async logout(user: JwtUser) {
+    const key = sessionKey(user.role, user.userId, user.sessionId);
+    const setKey = sessionsKey(user.role, user.userId);
+    await this.redis.del(key);
+    await this.redis.srem(setKey, user.sessionId);
+    return { message: 'Logged out' };
   }
 }

@@ -18,7 +18,7 @@ export interface JwtUser {
   userId: string;
   email: string;
   role: Role;
-  sessioniId: string;
+  sessionId: string;
 }
 
 export interface sessionData {

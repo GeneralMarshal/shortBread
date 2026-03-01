@@ -13,7 +13,7 @@ import { UpdateUrlDto } from './dtos/update-url.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @Controller('urls')
 @UseGuards(AuthGuard('jwt'))
 export class UrlsController {

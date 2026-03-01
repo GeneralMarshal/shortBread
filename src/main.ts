@@ -10,7 +10,18 @@ async function bootstrap() {
     .setTitle('Short Bread Api')
     .setDescription('Short Bread Api Documentation')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        in: 'header',
+        description: 'Enter your JWT token',
+      },
+      'JWT-auth',
+    )
+    .addSecurityRequirements('JWT-auth')
     .addTag('auth')
     .build();
 

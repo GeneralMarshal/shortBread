@@ -10,7 +10,6 @@ import { JwtPayload } from './jwt.strategy';
 import Redis from 'ioredis';
 import { sessionKey, sessionsKey } from 'src/redis/redis-keys';
 import { Logger } from '@nestjs/common';
-import { Role } from '@prisma/client';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);

@@ -1,7 +1,9 @@
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
+import { sessionKey } from 'src/redis/redis-keys';
 
 type Role = 'ADMIN' | 'USER';
 
@@ -18,9 +20,16 @@ export interface JwtUser {
   role: Role;
   sessioniId: string;
 }
+
+export interface sessionData {
+  userId: string;
+}
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
+  ) {
     const jwtsecret = config.get<string>('JWT_SECRET');
     if (!jwtsecret) {
       throw new Error('Jwt secret not defined');
@@ -32,7 +41,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload) {
-    return { userId: payload.sub, email: payload.email, role: payload.role };
+  async validate(payload: JwtPayload) {
+    const { sub, role, email, sessionId } = payload;
+    const key = sessionKey(role, sub, sessionId);
+
+    const session = await this.redis.get(key);
+
+    if (!session) {
+      throw new UnauthorizedException('Session expired or invalid');
+    }
+
+    return { userId: sub, email, role };
   }
 }

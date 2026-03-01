@@ -1,4 +1,9 @@
-import { Controller, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dtos/signup.dto';
@@ -7,6 +12,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { User } from 'src/common/decorators/user.decorator';
 import { JwtUser } from './jwt.strategy';
 import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
+import { RefreshTokenDto } from './dtos/refresh.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -28,5 +35,16 @@ export class AuthController {
   @Post('logout')
   async logout(@User() user: JwtUser) {
     return await this.authService.logout(user);
+  }
+
+  @Post('refresh')
+  async refresh(@Req() req: Request, @Body() dto: RefreshTokenDto) {
+    const token = (req.cookies?.refresh_token ?? dto?.refreshToken) as
+      | string
+      | undefined;
+    if (!token) {
+      throw new UnauthorizedException();
+    }
+    return await this.authService.refreshToken(token);
   }
 }

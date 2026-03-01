@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SignUpDto } from './dtos/signup.dto';
 import { BadRequestException } from '@nestjs/common';
@@ -144,6 +144,74 @@ export class AuthService {
       .catch((error) =>
         Logger.log('failed to dete session set in redis', error),
       );
+
+    const reKey = refreshKey(user.role, user.userId, user.sessionId);
+    await this.redis.del(reKey).catch((error) => {
+      Logger.log('failed to delete refresh token in redis', error);
+    });
+
     return { message: 'Logged out' };
+  }
+
+  async refreshToken(refreshToken: string) {
+    const verify = this.jwtService.verify<RefreshPayload>(refreshToken);
+
+    if (!verify) {
+      throw new UnauthorizedException();
+    }
+
+    const { type, sub, role, sessionId } = verify;
+
+    if (type !== 'refresh') {
+      throw new UnauthorizedException();
+    }
+
+    const reKey = refreshKey(role, sub, sessionId);
+    const storedRefreshToken = await this.redis.get(reKey);
+
+    if (!storedRefreshToken || storedRefreshToken !== refreshToken) {
+      throw new UnauthorizedException();
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: sub,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    const payload: JwtPayload = {
+      sub,
+      email: user.email,
+      role: user.role,
+      sessionId,
+    };
+
+    const refreshPayload: RefreshPayload = {
+      type: 'refresh',
+      sub,
+      role: user.role,
+      sessionId,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+    const newRefreshToken = this.jwtService.sign(refreshPayload, {
+      expiresIn: '7d',
+    });
+    const REFRESH_TTL = 7 * 24 * 60 * 60;
+
+    await this.redis
+      .setex(reKey, REFRESH_TTL, newRefreshToken)
+      .catch((error) => {
+        this.logger.error(' refresh store failed', error);
+      });
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+    };
   }
 }

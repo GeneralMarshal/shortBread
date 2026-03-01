@@ -8,8 +8,9 @@ import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { JwtPayload, JwtUser } from './jwt.strategy';
 import Redis from 'ioredis';
-import { sessionKey, sessionsKey } from 'src/redis/redis-keys';
+import { refreshKey, sessionKey, sessionsKey } from 'src/redis/redis-keys';
 import { Logger } from '@nestjs/common';
+import { RefreshPayload } from './jwt.strategy';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -80,18 +81,34 @@ export class AuthService {
     }
 
     const sessionId = crypto.randomUUID();
+
     const payload: JwtPayload = {
       sub: user.id,
       email,
       role: user.role,
       sessionId,
     };
+
+    const refreshPayload: RefreshPayload = {
+      type: 'refresh',
+      sub: user.id,
+      role: user.role,
+      sessionId,
+    };
+
     const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(refreshPayload, {
+      expiresIn: '7d',
+    });
 
     const key = sessionKey(user.role, user.id, sessionId);
     const SESSION_TTL = 86400;
     const setKey = sessionsKey(user.role, user.id);
 
+    const reKey = refreshKey(user.role, user.id, sessionId);
+    const REFRESH_TTL = 7 * 24 * 60 * 60;
+
+    //save session in redis
     await this.redis.setex(key, SESSION_TTL, user.id).catch((error) => {
       this.logger.error('session store failed', error);
     });
@@ -102,8 +119,12 @@ export class AuthService {
       this.logger.error('session expire failed', error);
     });
 
+    //save refresh in redis
+    await this.redis.setex(reKey, REFRESH_TTL, refreshToken);
+
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -115,8 +136,14 @@ export class AuthService {
   async logout(user: JwtUser) {
     const key = sessionKey(user.role, user.userId, user.sessionId);
     const setKey = sessionsKey(user.role, user.userId);
-    await this.redis.del(key);
-    await this.redis.srem(setKey, user.sessionId);
+    await this.redis
+      .del(key)
+      .catch((error) => Logger.log('failed to dete session in redis', error));
+    await this.redis
+      .srem(setKey, user.sessionId)
+      .catch((error) =>
+        Logger.log('failed to dete session set in redis', error),
+      );
     return { message: 'Logged out' };
   }
 }

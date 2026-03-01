@@ -14,6 +14,13 @@ export interface JwtPayload {
   sessionId: string;
 }
 
+export interface RefreshPayload {
+  type: string;
+  sub: string;
+  role: Role;
+  sessionId: string;
+}
+
 export interface JwtUser {
   userId: string;
   email: string;

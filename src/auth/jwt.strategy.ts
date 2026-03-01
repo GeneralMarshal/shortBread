@@ -58,6 +58,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Session expired or invalid');
     }
 
-    return { userId: sub, email, role };
+    return { userId: sub, email, role, sessionId };
   }
 }

@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import generateShortBread from '../utils/short-code';
 import { BadRequestException } from '@nestjs/common';
@@ -151,9 +152,21 @@ export class UrlsService {
     };
   }
 
-  async delete(code: string) {
+  async delete(code: string, userId: string) {
     if (!code) {
       throw new BadRequestException('Code is required');
+    }
+
+    const existCode = await this.prisma.shortUrl.findUnique({
+      where: { shortCode: code },
+    });
+    if (!existCode) {
+      throw new NotFoundException('Short URL not found');
+    }
+    if (existCode.ownerId !== userId) {
+      throw new ForbiddenException(
+        'You are not authorized to delete this short URL',
+      );
     }
     // const existCode = await this.prisma.shortUrl.findUnique({
     //   where: { shortCode: code },
@@ -187,7 +200,18 @@ export class UrlsService {
     }
   }
 
-  async update(code: string, dto: UpdateUrlDto) {
+  async update(code: string, dto: UpdateUrlDto, userId: string) {
+    const existCode = await this.prisma.shortUrl.findUnique({
+      where: { shortCode: code },
+    });
+    if (!existCode) {
+      throw new NotFoundException('Short URL not found');
+    }
+    if (existCode.ownerId !== userId) {
+      throw new ForbiddenException(
+        'You are not authorized to update this short URL',
+      );
+    }
     try {
       const udpated = await this.prisma.shortUrl.update({
         where: {

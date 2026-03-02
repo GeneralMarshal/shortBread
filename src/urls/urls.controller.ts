@@ -50,13 +50,17 @@ export class UrlsController {
 
   @Delete(':code')
   @HttpCode(HttpStatus.OK)
-  async delete(@Param('code') code: string) {
-    return this.urlsService.delete(code);
+  async delete(@Param('code') code: string, @User() user: JwtUser) {
+    return this.urlsService.delete(code, user.userId);
   }
 
   @Patch(':code')
   @HttpCode(HttpStatus.OK)
-  async update(@Param('code') code: string, @Body() dto: UpdateUrlDto) {
-    return await this.urlsService.update(code, dto);
+  async update(
+    @Param('code') code: string,
+    @Body() dto: UpdateUrlDto,
+    @User() user: JwtUser,
+  ) {
+    return await this.urlsService.update(code, dto, user.userId);
   }
 }

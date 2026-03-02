@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
+import { Role } from '@prisma/client';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsEnum,
+} from 'class-validator';
 
 export class SignUpDto {
   @ApiProperty({
@@ -17,4 +24,11 @@ export class SignUpDto {
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @MaxLength(32, { message: 'Password must be less than 32 characters long' })
   password: string;
+
+  @ApiProperty({
+    description: 'Role of the User',
+    example: 'USER',
+  })
+  @IsEnum(Role, { message: 'Invalid role' })
+  role: Role;
 }

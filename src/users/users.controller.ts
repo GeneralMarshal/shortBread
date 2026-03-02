@@ -6,7 +6,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { User } from 'src/common/decorators/user.decorator';
 import { JwtUser } from 'src/auth/jwt.strategy';
 
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @Controller('users')
 @UseGuards(AuthGuard('jwt'))
 export class UsersController {

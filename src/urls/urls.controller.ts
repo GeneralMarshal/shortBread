@@ -14,14 +14,17 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { User } from 'src/common/decorators/user.decorator';
 import { JwtUser } from 'src/auth/jwt.strategy';
+import { Roles } from 'src/auth/decorators/roles.decorators';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 @ApiBearerAuth('JWT-auth')
 @Controller('urls')
-@UseGuards(AuthGuard('jwt'))
 export class UrlsController {
   constructor(private urlsService: UrlsService) {}
 
   @Get()
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   getAll() {
     return this.urlsService.getAll();

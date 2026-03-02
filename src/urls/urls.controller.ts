@@ -12,6 +12,8 @@ import { UrlsService } from './urls.service';
 import { UpdateUrlDto } from './dtos/update-url.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { User } from 'src/common/decorators/user.decorator';
+import { JwtUser } from 'src/auth/jwt.strategy';
 
 @ApiBearerAuth('JWT-auth')
 @Controller('urls')
@@ -25,10 +27,16 @@ export class UrlsController {
     return this.urlsService.getAll();
   }
 
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  getByOwner(@User() user: JwtUser) {
+    return this.urlsService.getByOwner(user.userId);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateUrlDto) {
-    return this.urlsService.create(dto);
+  create(@Body() dto: CreateUrlDto, @User() user: JwtUser) {
+    return this.urlsService.create(dto, user.userId);
   }
 
   @Get(':code')

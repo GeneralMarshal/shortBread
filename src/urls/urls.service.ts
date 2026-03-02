@@ -36,7 +36,23 @@ export class UrlsService {
     }
     return allShortBreads;
   }
-  async create(dto: CreateUrlDto) {
+
+  async getByOwner(userId: string) {
+    const ownerShortBreads = await this.prisma.shortUrl.findMany({
+      orderBy: {
+        createAt: 'desc',
+      },
+      where: {
+        id: userId,
+      },
+    });
+    if (!ownerShortBreads) {
+      throw new BadRequestException('No short URLs found');
+    }
+    return ownerShortBreads;
+  }
+
+  async create(dto: CreateUrlDto, userId: string) {
     if (!dto.longUrl) {
       throw new BadRequestException('Long URL is required');
     }
@@ -46,6 +62,7 @@ export class UrlsService {
         longUrl: dto.longUrl,
         shortCode: shortUrl,
         ...(dto.expirationTime && { expiresAt: dto.expirationTime }),
+        ownerId: userId,
       },
     });
     if (!createUrl) {

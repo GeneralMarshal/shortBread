@@ -20,8 +20,21 @@ model ShortUrl {
   expiresAt  DateTime?
   clickCount Int       @default(0)
 
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id])
+  ownerId   String
+  owner     User       @relation(fields: [ownerId], references: [id])
+  urlClicks UrlClick[]
+}
+
+model UrlClick {
+  id         String   @id @default(uuid())
+  shortUrlId String
+  shortUrl   ShortUrl @relation(fields: [shortUrlId], references: [id])
+
+  clickedAt DateTime @default(now())
+  referrer  String?
+  ipAddress String?
+  userAgent String?
+  country   String?
 }
 
 model User {

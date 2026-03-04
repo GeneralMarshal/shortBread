@@ -9,6 +9,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { AnalyticsService } from './analytics/analytics.service';
 @Module({
   imports: [
     ThrottlerModule.forRoot({
@@ -30,6 +31,7 @@ import { AuthModule } from './auth/auth.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     AppService,
     PrismaService,
+    AnalyticsService,
   ],
 })
 export class AppModule {}

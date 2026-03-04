@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Patch,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { Body, Get, Param, Delete } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { User } from 'src/common/decorators/user.decorator';
 import { JwtUser } from 'src/auth/jwt.strategy';
 import { Roles } from 'src/auth/decorators/roles.decorators';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Request } from 'express';
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @ApiBearerAuth('JWT-auth')
@@ -44,8 +46,8 @@ export class UrlsController {
 
   @Get(':code')
   @HttpCode(HttpStatus.FOUND)
-  async redirect(@Param('code') code: string) {
-    return this.urlsService.redirect(code);
+  async redirect(@Param('code') code: string, @Req() req: Request) {
+    return this.urlsService.redirect(code, req);
   }
 
   @Delete(':code')

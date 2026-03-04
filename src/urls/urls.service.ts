@@ -13,15 +13,26 @@ import { Prisma } from 'generated/prisma/client';
 import Redis from 'ioredis';
 import { Logger } from '@nestjs/common';
 import { UpdateUrlDto } from './dtos/update-url.dto';
+import { AnalyticsService } from 'src/analytics/analytics.service';
+import { Request } from 'express';
 
 interface CachedUrl {
+  id: string;
   longUrl: string;
   expiresAt: string | null;
+}
+
+export interface ClickMeta {
+  ip: string;
+  userAgent?: string | null;
+  referrer?: string | null;
+  country?: string | null;
 }
 @Injectable()
 export class UrlsService {
   private readonly logger = new Logger(UrlsService.name);
   constructor(
+    private analyticsService: AnalyticsService,
     private prisma: PrismaService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
@@ -74,15 +85,27 @@ export class UrlsService {
     };
   }
 
-  async redirect(code: string) {
+  async redirect(code: string, req: Request) {
     if (!code) {
       throw new BadRequestException('Code is required');
     }
 
+    const ip = req.ip as string;
+    const userAgent = (req.headers['user-agent'] as string) || null;
+    const referrer = (req.headers['referer'] as string) || null;
+    const country = 'deVoid';
+
+    const clickMeta = {
+      ip,
+      userAgent,
+      referrer,
+      country,
+    };
+
     const cached = await this.redis.get(`short:${code}`);
 
     if (cached) {
-      const { longUrl, expiresAt } = JSON.parse(cached) as CachedUrl;
+      const { id, longUrl, expiresAt } = JSON.parse(cached) as CachedUrl;
 
       const isExpired = expiresAt && new Date(expiresAt) < new Date();
 
@@ -94,6 +117,11 @@ export class UrlsService {
         }
         throw new GoneException('Short URL has expired');
       }
+
+      // for writing to the UrlClick Table
+      this.analyticsService.recordClick(id, clickMeta).catch((error) => {
+        this.logger.warn('click record analytics store failed', error);
+      });
 
       this.prisma.shortUrl
         .update({
@@ -131,11 +159,17 @@ export class UrlsService {
         this.logger.warn('Failed to increment click count', error);
       });
 
+    // for writing to the UrlClick Table
+    this.analyticsService.recordClick(shortUrl.id, clickMeta).catch((error) => {
+      this.logger.warn('click record analytics store failed', error);
+    });
+
     try {
       console.log(`setting cache for ${code}`);
       await this.redis.set(
         `short:${code}`,
         JSON.stringify({
+          id: shortUrl.id,
           longUrl: shortUrl.longUrl,
           expiresAt: shortUrl.expiresAt,
         }),

@@ -30,7 +30,7 @@ export class UrlsController {
     return this.urlsService.getAll();
   }
 
-  @Get()
+  @Get('owner')
   @HttpCode(HttpStatus.OK)
   getByOwner(@User() user: JwtUser) {
     return this.urlsService.getByOwner(user.userId);

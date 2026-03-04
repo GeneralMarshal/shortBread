@@ -44,7 +44,7 @@ export class UrlsService {
         createAt: 'desc',
       },
       where: {
-        id: userId,
+        ownerId: userId,
       },
     });
     if (!ownerShortBreads) {

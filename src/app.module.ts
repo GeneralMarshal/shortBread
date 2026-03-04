@@ -10,6 +10,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { AnalyticsService } from './analytics/analytics.service';
+import { AnalyticsController } from './analytics/analytics.controller';
+import { AnalyticsModule } from './analytics/analytics.module';
 @Module({
   imports: [
     ThrottlerModule.forRoot({
@@ -25,8 +27,9 @@ import { AnalyticsService } from './analytics/analytics.service';
     RedisModule,
     UsersModule,
     AuthModule,
+    AnalyticsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, AnalyticsController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     AppService,

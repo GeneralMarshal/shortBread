@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClickMeta } from 'src/urls/urls.service';
 
@@ -24,5 +28,36 @@ export class AnalyticsService {
     }
 
     return record;
+  }
+
+  async getAllAnalytics() {
+    try {
+      return this.prisma.urlClick.findMany({ include: { shortUrl: true } });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'failed to load anlytics data',
+        error,
+      );
+    }
+  }
+
+  async getOwnerAnalytics(id: string) {
+    try {
+      return this.prisma.urlClick.findMany({
+        where: {
+          shortUrl: {
+            ownerId: id,
+          },
+        },
+        include: {
+          shortUrl: true,
+        },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'failed to load anlytics data',
+        error,
+      );
+    }
   }
 }

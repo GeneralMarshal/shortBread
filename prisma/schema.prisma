@@ -23,6 +23,8 @@ model ShortUrl {
   ownerId   String
   owner     User       @relation(fields: [ownerId], references: [id])
   urlClicks UrlClick[]
+
+  @@index([ownerId])
 }
 
 model UrlClick {
@@ -35,6 +37,7 @@ model UrlClick {
   ipAddress String?
   userAgent String?
   country   String?
+  @@index([shortUrlId, clickedAt])
 }
 
 model User {

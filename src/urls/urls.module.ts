@@ -3,10 +3,10 @@ import { UrlsService } from './urls.service';
 import { UrlsController } from './urls.controller';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthModule } from 'src/auth/auth.module';
-import { AnalyticsService } from 'src/analytics/analytics.service';
+import { AnalyticsModule } from 'src/analytics/analytics.module';
 @Module({
-  imports: [AuthModule],
-  providers: [UrlsService, PrismaService, AnalyticsService],
+  imports: [AuthModule, AnalyticsModule],
+  providers: [UrlsService, PrismaService],
   controllers: [UrlsController],
 })
 export class UrlsModule {}

@@ -1,3 +1,4 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import {
   BadRequestException,
   Injectable,
@@ -5,10 +6,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClickMeta } from 'src/urls/urls.service';
-
+import { Queue } from 'bullmq';
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectQueue('analytics') private readonly analyticsQueue: Queue,
+  ) {}
 
   async recordClick(shortUrlId: string, clickMeta: ClickMeta) {
     const { ip, userAgent, referrer, country } = clickMeta;
@@ -30,6 +34,9 @@ export class AnalyticsService {
     return record;
   }
 
+  async enqueueClick(shortUrlId: string, meta: ClickMeta) {
+    await this.analyticsQueue.add('record-click', { shortUrlId, meta });
+  }
   async getAllAnalytics() {
     try {
       return this.prisma.urlClick.findMany({ include: { shortUrl: true } });

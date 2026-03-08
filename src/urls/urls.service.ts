@@ -119,7 +119,7 @@ export class UrlsService {
       }
 
       // for writing to the UrlClick Table
-      this.analyticsService.recordClick(id, clickMeta).catch((error) => {
+      this.analyticsService.enqueueClick(id, clickMeta).catch((error) => {
         this.logger.warn('click record analytics store failed', error);
       });
 
@@ -160,9 +160,11 @@ export class UrlsService {
       });
 
     // for writing to the UrlClick Table
-    this.analyticsService.recordClick(shortUrl.id, clickMeta).catch((error) => {
-      this.logger.warn('click record analytics store failed', error);
-    });
+    this.analyticsService
+      .enqueueClick(shortUrl.id, clickMeta)
+      .catch((error) => {
+        this.logger.warn('click record analytics store failed', error);
+      });
 
     try {
       console.log(`setting cache for ${code}`);

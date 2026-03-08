@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma/prisma.service';
@@ -9,9 +9,10 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { AnalyticsService } from './analytics/analytics.service';
 import { AnalyticsController } from './analytics/analytics.controller';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { BullModule } from '@nestjs/bullmq';
+import Redis from 'ioredis';
 @Module({
   imports: [
     ThrottlerModule.forRoot({
@@ -23,6 +24,19 @@ import { AnalyticsModule } from './analytics/analytics.module';
       ],
     }),
     ConfigModule.forRoot({ isGlobal: true }),
+    BullModule.forRootAsync({
+      imports: [RedisModule],
+      useFactory: (config: ConfigService, redisClient: Redis) => ({
+        connection: redisClient,
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 1000 },
+          removeOnComplete: true,
+          removeOnFail: false,
+        },
+      }),
+      inject: [ConfigService, 'REDIS_CLIENT'],
+    }),
     UrlsModule,
     RedisModule,
     UsersModule,
@@ -34,7 +48,6 @@ import { AnalyticsModule } from './analytics/analytics.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     AppService,
     PrismaService,
-    AnalyticsService,
   ],
 })
 export class AppModule {}

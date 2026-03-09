@@ -37,20 +37,32 @@ model UrlClick {
   ipAddress String?
   userAgent String?
   country   String?
+
   @@index([shortUrlId, clickedAt])
 }
 
 model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  password  String
-  role      Role       @default(USER)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  shortUrls ShortUrl[]
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  password            String
+  role                Role                 @default(USER)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  shortUrls           ShortUrl[]
+  webhookSuscriptions WebhookSuscription[]
 }
 
 enum Role {
   USER
   ADMIN
+}
+
+model WebhookSuscription {
+  id        String   @id @default(uuid())
+  ownerId   String
+  user      User     @relation(fields: [ownerId], references: [id])
+  targetUrl String
+  secret    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 }

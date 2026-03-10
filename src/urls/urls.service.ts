@@ -28,6 +28,14 @@ export interface ClickMeta {
   referrer?: string | null;
   country?: string | null;
 }
+
+export interface WebhookPayload {
+  shortUrlId: string;
+  shortCode: string;
+  ownerId: string;
+  clickedAt: string;
+  meta: ClickMeta;
+}
 @Injectable()
 export class UrlsService {
   private readonly logger = new Logger(UrlsService.name);

@@ -2,9 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateWebhookDto } from './dtos/create-webhook.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateWebhookDto } from './dtos/update-webhook.dto';
+import { WebhookPayload } from 'src/urls/urls.service';
+import { HttpService } from '@nestjs/axios';
+import { Logger } from '@nestjs/common';
 @Injectable()
 export class WebhooksService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(WebhooksService.name);
+  constructor(
+    private prisma: PrismaService,
+    private httpService: HttpService,
+  ) {}
   async create(dto: CreateWebhookDto, userId: string) {
     const { targetUrl, secret } = dto;
 
@@ -86,5 +93,38 @@ export class WebhooksService {
     });
 
     return deleted;
+  }
+
+  async sendForOwner(payload: WebhookPayload) {
+    const { ownerId } = payload;
+
+    const activeWebhooks = await this.prisma.webhookSuscription.findMany({
+      where: {
+        ownerId,
+        isActive: true,
+      },
+    });
+
+    for (const webhook of activeWebhooks) {
+      try {
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        if (webhook.secret) {
+          headers['X-Webhook-Signature'] = this.SignatureFor(
+            webhook.secret,
+            payload,
+          );
+        }
+        await this.httpService.axiosRef.post(webhook.targetUrl, payload, {
+          headers,
+          timeout: 5000,
+        });
+      } catch (error: any) {
+        this.logger.warn(
+          `Webhook POST failed for ${webhook.targetUrl}: ${error.message}`,
+        );
+      }
+    }
   }
 }

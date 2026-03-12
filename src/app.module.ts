@@ -13,6 +13,8 @@ import { AnalyticsController } from './analytics/analytics.controller';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { BullModule } from '@nestjs/bullmq';
 import { WebhookModule } from './webhooks/webhooks.module';
+import { QueuesModule } from './queues/queues.module';
+import { EmailModule } from './email/email.module';
 import Redis from 'ioredis';
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import Redis from 'ioredis';
     AuthModule,
     AnalyticsModule,
     WebhookModule,
+    QueuesModule,
+    EmailModule,
   ],
   controllers: [AppController, AnalyticsController],
   providers: [

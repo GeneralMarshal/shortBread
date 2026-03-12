@@ -8,16 +8,17 @@ type RecordAnalyticsJobData = {
   meta: ClickMeta;
 };
 
-@Processor('analytics')
+@Processor('events')
 export class AnalyticsProcessor extends WorkerHost {
   constructor(private readonly analyticsService: AnalyticsService) {
     super();
   }
 
-  async process(job: Job<RecordAnalyticsJobData>) {
+  async process(job: Job<any>) {
     if (job.name === 'record-click') {
-      const { shortUrlId, meta } = job.data;
+      const { shortUrlId, meta } = job.data as RecordAnalyticsJobData;
       await this.analyticsService.recordClick(shortUrlId, meta);
     }
   }
 }
+

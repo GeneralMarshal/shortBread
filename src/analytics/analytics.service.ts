@@ -11,7 +11,7 @@ import { Queue } from 'bullmq';
 export class AnalyticsService {
   constructor(
     private readonly prisma: PrismaService,
-    @InjectQueue('analytics') private readonly analyticsQueue: Queue,
+    @InjectQueue('events') private readonly analyticsQueue: Queue,
   ) {}
 
   async recordClick(shortUrlId: string, clickMeta: ClickMeta) {

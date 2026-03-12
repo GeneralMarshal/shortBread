@@ -15,6 +15,7 @@ import { Logger } from '@nestjs/common';
 import { UpdateUrlDto } from './dtos/update-url.dto';
 import { AnalyticsService } from 'src/analytics/analytics.service';
 import { Request } from 'express';
+import { WebhooksService } from 'src/webhooks/webhooks.service';
 
 interface CachedUrl {
   id: string;
@@ -32,6 +33,7 @@ export interface ClickMeta {
 export interface WebhookPayload {
   shortUrlId: string;
   shortCode: string;
+  longUrl: string;
   ownerId: string;
   clickedAt: string;
   meta: ClickMeta;
@@ -41,6 +43,7 @@ export class UrlsService {
   private readonly logger = new Logger(UrlsService.name);
   constructor(
     private analyticsService: AnalyticsService,
+    private webhooksService: WebhooksService,
     private prisma: PrismaService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
@@ -131,6 +134,11 @@ export class UrlsService {
         this.logger.warn('click record analytics store failed', error);
       });
 
+      // for sending webhooks
+      this.webhooksService.enqueueWebhook(code, clickMeta).catch((error) => {
+        this.logger.warn('Webhook handling failed', error);
+      });
+
       this.prisma.shortUrl
         .update({
           where: { shortCode: code },
@@ -173,6 +181,11 @@ export class UrlsService {
       .catch((error) => {
         this.logger.warn('click record analytics store failed', error);
       });
+
+    // for sending webhooks
+    this.webhooksService.enqueueWebhook(code, clickMeta).catch((error) => {
+      this.logger.warn('Webhook handling failed', error);
+    });
 
     try {
       console.log(`setting cache for ${code}`);
